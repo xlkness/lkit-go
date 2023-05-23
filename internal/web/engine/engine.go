@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/gin-gonic/gin"
@@ -139,7 +138,6 @@ func (e *Engine) EnableDebugMode() {
 
 func (e *Engine) WithLogger(logger Logger) *Engine {
 	e.Use(func(ctx Context) {
-		fmt.Printf("receve req\n")
 		params := parseContextLogParams(ctx)
 		logger.HandleRequest(ctx, params)
 	})
