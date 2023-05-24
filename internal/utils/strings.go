@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func Unexport(s string) string {
+func LowerCase(s string) string {
 	if len(s) == 0 {
 		return ""
 	}

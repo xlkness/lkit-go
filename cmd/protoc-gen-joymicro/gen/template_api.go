@@ -8,12 +8,9 @@ import (
 	"sync"
 	"time"
 	"reflect"
-	"joynova.com/joynova/joymicro/joyclient"
-	"joynova.com/joynova/joymicro/log"
+	lkit_go "github.com/xlkness/lkit-go"
 	"github.com/smallnest/rpcx/client"
 )
-
-var _ = joyclient.Service{}
 
 {{ $isEnableCHash := .IsEnableInvokeConsistentHash }}
 {{ $isEnablePeer := .IsEnableSpecInvokePeer }}
@@ -31,10 +28,10 @@ func LazyInit{{ .ServiceName_FooBar }}Service(etcdAddrs []string, timeout time.D
 	if !isLocal {
 		{{ if $isEnableCHash -}} 
 		// 打开一致性hash调用，后续方法需要加入hash的key，相同key可以打到同一节点调用
-		c.(*{{ $serviceReceiver }}).c.SetSelector(joyclient.NewConsistentHashSelector())
+		c.(*{{ $serviceReceiver }}).c.SetSelector(lkit_go.NewRpcConsistentHashSelector())
 		{{ else if $isEnablePeer -}}
 		// 打开点对点调用，后续方法需要加入key，根据key来匹配相同的节点调用
-		c.(*{{ $serviceReceiver }}).c.SetSelector(new(joyclient.PeerSelector))
+		c.(*{{ $serviceReceiver }}).c.SetSelector(lkit_go.NewRpcPeerSelector())
 		{{- end -}}
 	}
 	{{ end }}
@@ -85,7 +82,7 @@ func handle{{ .ServiceName_FooBar }}CallError(method string, req, res interface{
 		return
 	}
 	if err.Error() == client.ErrXClientNoServer.Error() {
-		log.Errorf("rpc call method(%v) with request(%+v) not found any server", method, req)
+		lkit_go.Errorf("rpc call method(%v) with request(%+v) not found any server", method, req)
 	}
 	vo := reflect.ValueOf(res).Elem()
 	to := reflect.TypeOf(res).Elem()

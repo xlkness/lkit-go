@@ -8,8 +8,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"math"
 	"context"
-	"joynova.com/joynova/joymicro/joyclient"
-	"joynova.com/joynova/joymicro/joyservice"
+	"github.com/xlkness/lkit-go"
 	"time"
 )
 
@@ -27,5 +26,5 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
 
-
+var _ = lkit_go.JoyService{}
 `

@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/xlkness/lkit-go/cmd/protoc-gen-joymicro/gen"
 	"io/ioutil"
 	"os"
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
-	"joynova.com/joynova/joymicro/proto/protoc-gen-joymicro/gen"
 )
 
 func main() {

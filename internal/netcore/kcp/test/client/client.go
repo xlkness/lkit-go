@@ -3,10 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/xlkness/lkit-go/internal/netcore/kcp"
 	"sync/atomic"
 	"time"
-
-	"joynova.com/library/supernova/pkg/netcore/kcp"
 )
 
 // kcp库日志设置

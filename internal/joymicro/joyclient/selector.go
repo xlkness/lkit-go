@@ -22,8 +22,11 @@ func init() {
 
 // PeerSelector 点对点选择器
 type PeerSelector struct {
-	servers   []string
-	SelectFun func()
+	servers []string
+}
+
+func NewPeerSelector() client.Selector {
+	return new(PeerSelector)
 }
 
 // Select 根据context里的select_key选择匹配的服务器进行调用

@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/xlkness/lkit-go/internal/netcore/kcp"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"joynova.com/library/supernova/pkg/netcore/kcp"
 )
 
 // kcp库日志设置

@@ -4,13 +4,12 @@ import (
 	"encoding/binary"
 	"flag"
 	"fmt"
+	"github.com/xlkness/lkit-go/internal/netcore/kcp"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
-
-	"joynova.com/library/supernova/pkg/netcore/kcp"
 )
 
 // kcp库日志设置

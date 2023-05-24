@@ -1,7 +1,7 @@
 package gen
 
 import (
-	"github.com/xlkness/lkit-go/internal/utils"
+	"github.com/xlkness/lkit-go"
 	"path/filepath"
 	"strings"
 
@@ -53,11 +53,11 @@ func (s *Service) HandlerInterfaceName() string {
 }
 
 func (s *Service) Name_FooBar() string {
-	return utils.camelCase(s.ProtoService.GetName())
+	return lkit_go.StringCamelCase(s.ProtoService.GetName())
 }
 
 func (s *Service) Name_fooBar() string {
-	return utils.unexport(s.ProtoService.GetName())
+	return lkit_go.StringLowerCase(s.ProtoService.GetName())
 }
 
 type File struct {
@@ -68,11 +68,11 @@ type File struct {
 }
 
 func (f *File) ServiceName_FooBar() string {
-	return utils.camelCase(f.ServiceName())
+	return lkit_go.StringCamelCase(f.ServiceName())
 }
 
 func (f *File) ServiceName_fooBar() string {
-	return utils.unexport(f.ServiceName())
+	return lkit_go.StringLowerCase(f.ServiceName())
 }
 
 func (f *File) Package() string {
