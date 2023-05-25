@@ -9,6 +9,7 @@ import (
 
 type JoyService = joyservice.ServicesManager
 type JoyClient = joyclient.Service
+type JoySelector = joyclient.Selector
 
 func NewRpcService(listenAddr, exposeAddr string, etcdServerAddrs []string) (*JoyService, error) {
 	return joyservice.New(listenAddr, exposeAddr, etcdServerAddrs)

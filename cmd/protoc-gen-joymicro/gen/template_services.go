@@ -33,7 +33,7 @@ type {{ $service.ServiceInterfaceName }} interface {
 // New{{ .ServiceName_FooBar }}Service 创建服务调用
 func New{{ .ServiceName_FooBar }}ServiceInstance(etcdAddrs []string, timeout time.Duration, isPermanent, isLocal bool) {{ .ServiceInterfaceName }} {
 if !isLocal {
-	c := joyclient.New({{ $callServiceName }}, etcdAddrs, timeout, isPermanent)
+	c := lkit_go.NewRpcClient({{ $callServiceName }}, etcdAddrs, timeout, isPermanent)
 	return &{{ $serviceReceiver }} {
 		c: c,
 	} 
@@ -44,7 +44,7 @@ return &{{ .ServiceName_fooBar }}ServiceLocal{}
 }
 
 // Set{{ .ServiceName_FooBar }}ServiceSelector 设置调用插件，可以用来监听服务节点变化、按需选择某个节点调用、自定义负载均衡算法等
-func Set{{ .ServiceName_FooBar }}ServiceSelector(c {{ .ServiceInterfaceName }}, selector joyclient.Selector) {
+func Set{{ .ServiceName_FooBar }}ServiceSelector(c {{ .ServiceInterfaceName }}, selector lkit_go.JoySelector) {
 c1, ok := c.(*{{ .ServiceName_fooBar }}Service)
 if ok {
 	c1.c.SetSelector(selector)
@@ -53,7 +53,7 @@ if ok {
 
 // {{ $serviceReceiver }} 调用服务的远程调用具体实现
 type {{ $serviceReceiver }} struct {
-	c *joyclient.Service
+	c *lkit_go.JoyClient
 }
 
 {{ range $idx, $service := .Services }}
@@ -104,7 +104,7 @@ type {{ $service.HandlerInterfaceName }} interface {
 
 
 // Register{{ .ServiceName_FooBar }}Handler 手工给服务注册handler，但必须在s.Run之前调用，metadata是自定义的服务描述信息，会传递给服务调用客户端
-func Register{{ .ServiceName_FooBar }}Handler(s *joyservice.ServicesManager, handler {{ .HandlerInterfaceName }}, metadata map[string]string) error {
+func Register{{ .ServiceName_FooBar }}Handler(s *lkit_go.JoyService, handler {{ .HandlerInterfaceName }}, metadata map[string]string) error {
 // 如果是本地调试函数调用，设置全局handler
 Set{{ .ServiceName_FooBar }}HandlerLocal(handler)
 return s.RegisterOneService({{ $callServiceName }}, handler, metadata)
@@ -113,13 +113,13 @@ return s.RegisterOneService({{ $callServiceName }}, handler, metadata)
 {{ $isEnablePeer := .IsEnableSpecInvokePeer }}
 // New{{ .ServiceName_FooBar }}Handler 创建并注册、运行一个服务
 {{ if $isEnablePeer }}
-func New{{ .ServiceName_FooBar }}Handler(nodeKey, listenAddr, exposeAddr string, etcdAddrs []string, handler {{ .HandlerInterfaceName }}, isLocal bool) (*joyservice.ServicesManager, error) {
+func New{{ .ServiceName_FooBar }}Handler(nodeKey, listenAddr, exposeAddr string, etcdAddrs []string, handler {{ .HandlerInterfaceName }}, isLocal bool) (*lkit_go.JoyService, error) {
 if !isLocal {
-s, err := joyservice.NewWithKey(nodeKey, listenAddr, exposeAddr, etcdAddrs)
+s, err := lkit_go.NewRpcServiceWithKey(nodeKey, listenAddr, exposeAddr, etcdAddrs)
 {{ else }}
-func New{{ .ServiceName_FooBar }}Handler(listenAddr, exposeAddr string, etcdAddrs []string, handler {{ .HandlerInterfaceName }}, isLocal bool) (*joyservice.ServicesManager, error) {
+func New{{ .ServiceName_FooBar }}Handler(listenAddr, exposeAddr string, etcdAddrs []string, handler {{ .HandlerInterfaceName }}, isLocal bool) (*lkit_go.JoyService, error) {
 if !isLocal {
-s, err := joyservice.New(listenAddr, exposeAddr, etcdAddrs)
+s, err := lkit_go.NewRpcService(listenAddr, exposeAddr, etcdAddrs)
 {{ end }}
 	if err != nil {
 		return nil, err
