@@ -10,8 +10,8 @@ type SchedulerOption = application.SchedulerOption
 type Application = application.App
 type AppOption = application.AppOption
 
-func NewApp(options ...AppOption) *Application {
-	return application.NewApp(options...)
+func NewApp(name string, options ...AppOption) *Application {
+	return application.NewApp(name, options...)
 }
 
 func NewScheduler(options ...SchedulerOption) *Scheduler {
