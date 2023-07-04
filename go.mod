@@ -17,10 +17,10 @@ require (
 	github.com/rabbitmq/amqp091-go v1.8.1
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
 	github.com/rpcxio/libkv v0.5.1
-	github.com/rpcxio/rpcx-etcd v0.2.0
+	github.com/rpcxio/rpcx-etcd v0.3.2
 	github.com/rpcxio/rpcx-plugins v0.0.0-20220730073026-120f5ed14272
 	github.com/rs/zerolog v1.29.1
-	github.com/smallnest/rpcx v1.8.7
+	github.com/smallnest/rpcx v1.8.9
 	go.etcd.io/etcd/client/v3 v3.5.1
 	go.opentelemetry.io/otel v1.15.1
 	go.opentelemetry.io/otel/exporters/jaeger v1.15.1
