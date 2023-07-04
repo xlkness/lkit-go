@@ -13,7 +13,7 @@ import (
 // flagStructPointers为结构体指针数组，tag描述如下：
 //
 //	type Flag struct {
-//			F1 `name:"f1" desc:"xxx" default:123`
+//			F1 `env:"f1" desc:"xxx" default:123`
 //	}
 func ParseWithStructPointers(flagStructPointers ...interface{}) {
 
@@ -44,7 +44,7 @@ func flagParseStruct2Flags(st interface{}) {
 	for i := 0; i < stTo.NumField(); i++ {
 		field := stTo.Field(i)
 
-		key, find := field.Tag.Lookup("name")
+		key, find := field.Tag.Lookup("env")
 		if !find {
 			continue
 		}

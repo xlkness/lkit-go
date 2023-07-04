@@ -111,11 +111,11 @@ func (scd *Scheduler) Stop() {
 func (scd *Scheduler) initialize() error {
 	var schedulerBootFlags []interface{}
 	for _, v := range scd.apps {
-		schduler := v.item.(*App)
-		if schduler.bootFlag == nil {
+		app := v.item.(*App)
+		if app.bootFlag == nil {
 			continue
 		}
-		schedulerBootFlags = append(schedulerBootFlags, schduler.bootFlag)
+		schedulerBootFlags = append(schedulerBootFlags, app.bootFlag)
 	}
 
 	// 解析启动参数

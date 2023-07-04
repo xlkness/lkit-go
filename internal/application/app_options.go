@@ -4,8 +4,8 @@ package application
 // 只支持string/int/int64/bool四种字段类型，例如：
 //
 //	type Flags struct {
-//		F1 string `env:"id" desc:"boot id" value:"default value"`
-//	  	F2 int `env:"num" desc:"number" value:"3"`
+//		F1 string `env:"id" desc:"boot id" default:"default value"`
+//	  	F2 int `env:"num" desc:"number" default:"3"`
 //	}
 //	WithAppBootFlag(&Flags{})
 func WithAppBootFlag(flag interface{}) AppOption {
