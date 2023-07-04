@@ -21,6 +21,7 @@ type pair struct {
 	item interface{}
 }
 
+// App 受scheduler调度的最小逻辑单元，有独立的启动参数、各种串行、并行任务
 type App struct {
 	bootFlag        interface{}
 	initializeTasks []pair // 启动服务前串行执行初始化任务的job

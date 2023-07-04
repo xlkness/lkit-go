@@ -29,6 +29,7 @@ type CommBootFlag struct {
 	LogLevel       string `name:"log_level" desc:"trace|debug|info|notice|warn|error|criti|fatal|panic" default:""`
 }
 
+// Scheduler 调度器，调度多个app
 type Scheduler struct {
 	globalBootFlag              *CommBootFlag                          // app全局启动参数
 	globalBootConfigFileContent interface{}                            // app全局配置文件内容结构体指针，为空没有配置文件解析
