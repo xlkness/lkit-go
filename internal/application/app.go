@@ -52,7 +52,7 @@ func (app *App) WithServer(desc string, server *engine.Engine) *App {
 
 // WithService 添加rpc服务
 func (app *App) WithService(desc string, service *joyservice.ServicesManager) *App {
-	app.servers = append(app.servers, pair{desc, service})
+	app.services = append(app.services, pair{desc, service})
 	return app
 }
 
