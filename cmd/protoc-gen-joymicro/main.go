@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/xlkness/lkit-go/cmd/protoc-gen-joymicro/gen"
+	"github.com/xlkness/lkit-go/cmd/protoc-gen-joymicro/gen_all_in_one"
 	"io/ioutil"
 	"os"
 
@@ -11,6 +12,7 @@ import (
 )
 
 func main() {
+	mode := os.Getenv("joymicro_mode")
 	str := ""
 	data, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
@@ -31,10 +33,20 @@ func main() {
 		File: []*pluginpb.CodeGeneratorResponse_File{},
 	}
 
-	for _, file := range request.ProtoFile {
-		for _, f := range gen.GenerateFile(file) {
-			if f != nil {
-				response.File = append(response.File, f)
+	if mode == "all_in_one" {
+		for _, file := range request.ProtoFile {
+			for _, f := range gen_all_in_one.GenerateFile(file) {
+				if f != nil {
+					response.File = append(response.File, f)
+				}
+			}
+		}
+	} else {
+		for _, file := range request.ProtoFile {
+			for _, f := range gen.GenerateFile(file) {
+				if f != nil {
+					response.File = append(response.File, f)
+				}
 			}
 		}
 	}
