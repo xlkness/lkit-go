@@ -98,11 +98,12 @@ func (app *App) run() (err error) {
 	// 启动rpc服务
 	for _, pair := range app.services {
 		go func(desc string, s *joyservice.ServicesManager) {
+			log.Noticef("app %v service %v will listen on %v", app.Name, desc, s.Addr)
 			curErr := s.Run()
 			if curErr != nil {
 				waitChan <- fmt.Errorf("service %s run on %v error:%v", desc, s.Addr, err)
 			} else {
-				log.Noticef("app %v service %v listen on %v", app.Name, desc, s.Addr)
+
 			}
 		}(pair.desc, pair.item.(*joyservice.ServicesManager))
 	}
@@ -112,11 +113,12 @@ func (app *App) run() (err error) {
 	// 启动web服务
 	for _, pair := range app.servers {
 		go func(desc string, s *engine.Engine) {
+			log.Noticef("app %v server %v will listen on %v", app.Name, desc, s.Addr)
 			err := s.Run()
 			if err != nil {
 				waitChan <- fmt.Errorf("server %s error:%v", desc, err)
 			} else {
-				log.Noticef("app %v server %v listen on %v", app.Name, desc, s.Addr)
+
 			}
 		}(pair.desc, pair.item.(*engine.Engine))
 	}
