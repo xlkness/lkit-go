@@ -23,6 +23,7 @@ type pair struct {
 
 // App 受scheduler调度的最小逻辑单元，有独立的启动参数、各种串行、并行任务
 type App struct {
+	Name            string
 	bootFlag        interface{}
 	initializeTasks []pair // 启动服务前串行执行初始化任务的job
 	services        []pair // rpc服务
@@ -32,8 +33,9 @@ type App struct {
 	parallelJobs    []pair // 启动services、servers后并行执行的任务，不关心结果，例如内存数据的预热等
 }
 
-func NewApp(options ...AppOption) *App {
+func NewApp(name string, options ...AppOption) *App {
 	app := new(App)
+	app.Name = name
 	app.applyOptions(options...)
 	return app
 }
@@ -99,6 +101,8 @@ func (app *App) run() (err error) {
 			curErr := s.Run()
 			if curErr != nil {
 				waitChan <- fmt.Errorf("service %s run on %v error:%v", desc, s.Addr, err)
+			} else {
+				log.Noticef("app %v service %v listen on %v", app.Name, desc, s.Addr)
 			}
 		}(pair.desc, pair.item.(*joyservice.ServicesManager))
 	}
@@ -111,6 +115,8 @@ func (app *App) run() (err error) {
 			err := s.Run()
 			if err != nil {
 				waitChan <- fmt.Errorf("server %s error:%v", desc, err)
+			} else {
+				log.Noticef("app %v server %v listen on %v", app.Name, desc, s.Addr)
 			}
 		}(pair.desc, pair.item.(*engine.Engine))
 	}

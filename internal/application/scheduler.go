@@ -68,11 +68,11 @@ func (scd *Scheduler) Run() error {
 	}
 	waitChan := make(chan waitInfo, 1)
 	for _, scd := range scd.apps {
-		go func(desc string, scheduler *App) {
-			err := scheduler.run()
+		go func(desc string, app *App) {
+			err := app.run()
 			if err != nil {
 				// 返回调度器的报错
-				waitChan <- waitInfo{desc, scheduler, err}
+				waitChan <- waitInfo{desc, app, err}
 			}
 		}(scd.desc, scd.item.(*App))
 	}
