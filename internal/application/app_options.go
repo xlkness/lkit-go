@@ -9,17 +9,17 @@ package application
 //	}
 //	WithAppBootFlag(&Flags{})
 func WithAppBootFlag(flag interface{}) AppOption {
-	return oppOptionFunction(func(app *App) {
+	return appOptionFunction(func(app *Application) {
 		app.bootFlag = flag
 	})
 }
 
 type AppOption interface {
-	Apply(scd *App)
+	Apply(scd *Application)
 }
 
-type oppOptionFunction func(app *App)
+type appOptionFunction func(app *Application)
 
-func (of oppOptionFunction) Apply(app *App) {
+func (of appOptionFunction) Apply(app *Application) {
 	of(app)
 }

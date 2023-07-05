@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 
@@ -63,24 +64,20 @@ func init() {
 // 文件路径保留深度
 var FileReversedDepth = 3
 
-func NewGlobalLogger(writer Handler, level LogLevel, initFun func(logger zerolog.Logger) zerolog.Logger, terminalDebug bool) {
+func NewGlobalLogger(writers []io.Writer, level LogLevel, initFun func(logger zerolog.Logger) zerolog.Logger) {
 	// 设置全局日志等级
 	zerolog.SetGlobalLevel(level)
 	var parentLogger zerolog.Logger
 
-	if writer == nil {
+	if len(writers) == 0 {
 		fmt.Fprintf(os.Stderr, "NewGlobalLogger but write is nil, default give os.Stdout\n")
-		writer = os.Stdout
+		writers = append(writers, os.Stdout)
 	}
 
-	if terminalDebug {
-		multi := zerolog.MultiLevelWriter(writer, os.Stdout)
-		// 创建全局日志
-		parentLogger = zerolog.New(multi).With().Logger()
-	} else {
-		// 创建全局日志
-		parentLogger = zerolog.New(writer).With().Logger()
-	}
+	multi := zerolog.MultiLevelWriter(writers...)
+
+	// 创建全局日志
+	parentLogger = zerolog.New(multi).With().Logger()
 
 	if initFun != nil {
 		log.Logger = initFun(parentLogger)

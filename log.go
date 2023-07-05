@@ -3,13 +3,26 @@ package lkit_go
 import (
 	"github.com/rs/zerolog"
 	"github.com/xlkness/lkit-go/internal/log"
+	"io"
 )
 
 type Handler = log.Handler
 type LogLevel = log.LogLevel
 
-func NewGlobalLogger(writer Handler, level LogLevel, initFun func(logger zerolog.Logger) zerolog.Logger, terminalDebug bool) {
-	log.NewGlobalLogger(writer, level, initFun, terminalDebug)
+var (
+	LogLevelTrace  = log.LogLevelTrace
+	LogLevelDebug  = log.LogLevelDebug
+	LogLevelInfo   = log.LogLevelInfo
+	LogLevelNotice = log.LogLevelNotice
+	LogLevelWarn   = log.LogLevelWarn
+	LogLevelError  = log.LogLevelError
+	LogLevelCriti  = log.LogLevelCriti
+	LogLevelFatal  = log.LogLevelFatal
+	LogLevelPanic  = log.LogLevelPanic
+)
+
+func NewGlobalLogger(writers []io.Writer, level LogLevel, initFun func(logger zerolog.Logger) zerolog.Logger) {
+	log.NewGlobalLogger(writers, level, initFun)
 }
 
 func Tracef(format string, v ...interface{}) {

@@ -11,23 +11,12 @@ import (
 	"github.com/xlkness/lkit-go/internal/trace/prom"
 	"github.com/xlkness/lkit-go/internal/utils"
 	"github.com/xlkness/lkit-go/internal/web/engine"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 )
-
-var CommonBootFlag = &CommBootFlag{}
-
-type CommBootFlag struct {
-	GlobalID       string `env:"global_id" desc:"全局唯一id，为空会给随机字符串" default:""`
-	ServiceName    string `env:"service_name" desc:"当前进程服务名，为空会用当前可执行文件名" default:""`
-	BootConfigFile string `env:"boot_config_file" desc:"起服配置文件路径，例如：/dir/boot_config.yaml" default:""`
-	TracePort      string `env:"trace_port" desc:"监控端口，包含prometheus、go pprof等" default:"7788"`
-	LogDirPath     string `env:"log_dir" desc:"程序日志输出目录" default:"log"`
-	LogStdout      bool   `env:"log_stdout" desc:"程序日志是否也输出到控制台" default:"false"`
-	LogLevel       string `env:"log_level" desc:"trace|debug|info|notice|warn|error|criti|fatal|panic" default:""`
-}
 
 // Scheduler 调度器，调度多个app
 type Scheduler struct {
@@ -35,8 +24,9 @@ type Scheduler struct {
 	globalBootConfigFileContent interface{}                            // app全局配置文件内容结构体指针，为空没有配置文件解析
 	globalBootConfigParser      func(in []byte, out interface{}) error // 配置文件解析函数，默认yaml
 	defaultLogLevel             log.LogLevel                           // 默认debug日志等级，优先用globalBootFlag指定的日志等级
-	apps                        []pair                                 // 可绑定多个调度器
-	server                      *engine.Engine                         // app全局的web服务，当前暂时一个，为prometheus、pprof共用
+	adis                        []*ApplicationDescInfo
+	apps                        []*Application // 可绑定多个app
+	server                      *engine.Engine // app全局的web服务，当前暂时一个，为prometheus、pprof共用
 }
 
 // NewScheduler
@@ -47,9 +37,10 @@ func NewScheduler(appOptions ...SchedulerOption) *Scheduler {
 	return scd
 }
 
-// WithScheduler 添加调度器
-func (scd *Scheduler) WithApp(desc string, app *App) *Scheduler {
-	scd.apps = append(scd.apps, pair{desc, app})
+func (scd *Scheduler) CreateApp(appDescInfoList ...*ApplicationDescInfo) *Scheduler {
+	for _, adi := range appDescInfoList {
+		scd.withAppDescInfo(adi)
+	}
 	return scd
 }
 
@@ -60,22 +51,18 @@ func (scd *Scheduler) Run() error {
 		return err
 	}
 
+	err = scd.initApps()
+	if err != nil {
+		return err
+	}
+
 	// 启动调度器
 	type waitInfo struct {
 		desc string
-		scd  *App
+		scd  *Application
 		err  error
 	}
 	waitChan := make(chan waitInfo, 1)
-	for _, scd := range scd.apps {
-		go func(desc string, app *App) {
-			err := app.run()
-			if err != nil {
-				// 返回调度器的报错
-				waitChan <- waitInfo{desc, app, err}
-			}
-		}(scd.desc, scd.item.(*App))
-	}
 
 	// 运行trace server
 	go func() {
@@ -86,16 +73,26 @@ func (scd *Scheduler) Run() error {
 		}
 	}()
 
+	for _, app := range scd.apps {
+		go func(app *Application) {
+			err := app.run()
+			if err != nil {
+				// 返回调度器的报错
+				waitChan <- waitInfo{app.Name, app, err}
+			}
+		}(app)
+	}
+
 	watchSignChan := libsyscal.WatchSignal1()
 
 	defer scd.Stop()
 
 	select {
 	case signal := <-watchSignChan:
-		log.Noticef("application receive signal(%v), will graceful stop", signal)
+		log.Noticef("Application receive signal(%v), will graceful stop", signal)
 		return nil
 	case errInfo := <-waitChan:
-		err := fmt.Errorf("application receive scheduler(%v) stop with error:%v", errInfo.desc, errInfo.err)
+		err := fmt.Errorf("Application receive scheduler(%v) stop with error:%v", errInfo.desc, errInfo.err)
 		log.Errorf(err.Error())
 		return err
 	}
@@ -103,19 +100,26 @@ func (scd *Scheduler) Run() error {
 
 func (scd *Scheduler) Stop() {
 	for _, app := range scd.apps {
-		app.item.(*App).stop()
+		app.stop()
 	}
+}
+
+// WithScheduler 添加调度器
+func (scd *Scheduler) withAppDescInfo(adi *ApplicationDescInfo) *Scheduler {
+	scd.adis = append(scd.adis, adi)
+	return scd
 }
 
 // initialize 初始化app
 func (scd *Scheduler) initialize() error {
 	var schedulerBootFlags []interface{}
-	for _, v := range scd.apps {
-		app := v.item.(*App)
-		if app.bootFlag == nil {
+	for _, v := range scd.adis {
+		curApp := newApp(v.name, v.options...)
+		scd.apps = append(scd.apps, curApp)
+		if curApp.bootFlag == nil {
 			continue
 		}
-		schedulerBootFlags = append(schedulerBootFlags, app.bootFlag)
+		schedulerBootFlags = append(schedulerBootFlags, curApp.bootFlag)
 	}
 
 	// 解析启动参数
@@ -153,21 +157,35 @@ func (scd *Scheduler) initialize() error {
 	}
 
 	// 初始化日志系统
-	logHandler, err := handler.NewRotatingDayMaxFileHandler(scd.globalBootFlag.LogDirPath, scd.globalBootFlag.ServiceName, 1<<30, 10)
-	if err != nil {
-		newErr := fmt.Errorf("new log file handler with path [%v] name[%v] error:%v",
-			scd.globalBootFlag.LogDirPath, scd.globalBootFlag.ServiceName, err)
-		return newErr
+	var logHandlers []io.Writer
+	if scd.globalBootFlag.LogDirPath == "" {
+		// 没有指定日志输出目录，默认输出到控制台
+		logHandlers = append(logHandlers, os.Stdout)
+	} else {
+		// 指定日志输出目录
+		logHandler, err := handler.NewRotatingDayMaxFileHandler(scd.globalBootFlag.LogDirPath, scd.globalBootFlag.ServiceName, 1<<30, 10)
+		if err != nil {
+			newErr := fmt.Errorf("new log file handler with path [%v] name[%v] error:%v",
+				scd.globalBootFlag.LogDirPath, scd.globalBootFlag.ServiceName, err)
+			return newErr
+		}
+		logHandlers = append(logHandlers, logHandler)
+
+		// 也指定输出到控制台
+		if scd.globalBootFlag.LogStdout {
+			logHandlers = append(logHandlers, os.Stdout)
+		}
 	}
+
 	// 获取日志等级默认日志等级0，对应zerolog是debug
 	logLevel := scd.defaultLogLevel
 	if scd.globalBootFlag.LogLevel != "" {
 		logLevel = log.LogLevelStr2Enum[scd.globalBootFlag.LogLevel]
 	}
 	// 创建logger
-	log.NewGlobalLogger(logHandler, logLevel, func(l zerolog.Logger) zerolog.Logger {
+	log.NewGlobalLogger(logHandlers, logLevel, func(l zerolog.Logger) zerolog.Logger {
 		return l.With().Str("service", scd.globalBootFlag.ServiceName).Str("node_id", scd.globalBootFlag.GlobalID).Logger()
-	}, scd.globalBootFlag.LogStdout)
+	})
 
 	// 初始化prometheus metrics、go pprof
 	scd.server = prom.NewEngine(":"+scd.globalBootFlag.TracePort, true)
@@ -180,6 +198,21 @@ func (scd *Scheduler) initialize() error {
 		}
 	}
 	holmes.StartTraceAndDump(holmesPath + "holmes/" + scd.globalBootFlag.ServiceName)
+
+	return nil
+}
+
+func (scd *Scheduler) initApps() error {
+	for i, app := range scd.apps {
+		if scd.adis[i].initFunc != nil {
+			err := scd.adis[i].initFunc(scd.globalBootFlag, scd.globalBootConfigFileContent, app)
+			if err != nil {
+				return fmt.Errorf("application[%v] init return error[%v]", app.Name, err)
+			} else {
+				log.Noticef("application[%v] initialize ok", app.Name)
+			}
+		}
+	}
 
 	return nil
 }

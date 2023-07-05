@@ -3,6 +3,7 @@ package log
 import (
 	"fmt"
 	"github.com/xlkness/lkit-go/internal/log/handler"
+	"io"
 	"os"
 	"sync"
 	"testing"
@@ -20,9 +21,9 @@ func TestGlobalAndSubLogger(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	NewGlobalLogger(fh, LogLevelTrace, func(l zerolog.Logger) zerolog.Logger {
+	NewGlobalLogger([]io.Writer{fh, os.Stdout}, LogLevelTrace, func(l zerolog.Logger) zerolog.Logger {
 		return l.With().Str("test_key", "test_value").Logger()
-	}, true)
+	})
 
 	subLogger1 := GetSubLogger().Str("test_sub_key1", "test_sub_value1").Logger()
 	subLogger2 := GetSubLogger().Str("test_sub_key2", "test_sub_value2").Logger()

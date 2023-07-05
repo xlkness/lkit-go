@@ -22,7 +22,7 @@ type pair struct {
 }
 
 // App 受scheduler调度的最小逻辑单元，有独立的启动参数、各种串行、并行任务
-type App struct {
+type Application struct {
 	Name            string
 	bootFlag        interface{}
 	initializeTasks []pair // 启动服务前串行执行初始化任务的job
@@ -33,57 +33,57 @@ type App struct {
 	parallelJobs    []pair // 启动services、servers后并行执行的任务，不关心结果，例如内存数据的预热等
 }
 
-func NewApp(name string, options ...AppOption) *App {
-	app := new(App)
+func newApp(name string, options ...AppOption) *Application {
+	app := new(Application)
 	app.Name = name
 	app.applyOptions(options...)
 	return app
 }
 
 // WithInitializeTask app完成init之后run之前执行的任务，可以用来初始化某些业务或者检查配置等
-func (app *App) WithInitializeTask(desc string, task Task) *App {
+func (app *Application) WithInitializeTask(desc string, task Task) *Application {
 	app.initializeTasks = append(app.initializeTasks, pair{desc, task})
 	return app
 }
 
 // WithServer 添加web服务器
-func (app *App) WithServer(desc string, server *engine.Engine) *App {
+func (app *Application) WithServer(desc string, server *engine.Engine) *Application {
 	app.servers = append(app.servers, pair{desc, server})
 	return app
 }
 
 // WithService 添加rpc服务
-func (app *App) WithService(desc string, service *joyservice.ServicesManager) *App {
+func (app *Application) WithService(desc string, service *joyservice.ServicesManager) *Application {
 	app.services = append(app.services, pair{desc, service})
 	return app
 }
 
 // WithPostTask app run之后执行的任务，一般做临时检查任务，可以用来服务启动后加载数据检查等
-func (app *App) WithPostTask(desc string, task Task) *App {
+func (app *Application) WithPostTask(desc string, task Task) *Application {
 	app.postRunTasks = append(app.postRunTasks, pair{desc, task})
 	return app
 }
 
 // WithPostWorker 完成post task之后执行的后台任务，报错退出等app也会退出，一般做永久的关键后台逻辑
-func (app *App) WithPostWorker(desc string, worker Worker) *App {
+func (app *Application) WithPostWorker(desc string, worker Worker) *Application {
 	app.postRunWorkers = append(app.postRunWorkers, pair{desc, worker})
 	return app
 }
 
 // WithParallelJob 完成post task之后执行的并行后台任务，一般做永久的不关键后台逻辑，例如内存预热等
-func (app *App) WithParallelJob(desc string, job Job) *App {
+func (app *Application) WithParallelJob(desc string, job Job) *Application {
 	app.parallelJobs = append(app.parallelJobs, pair{desc, job})
 	return app
 }
 
-func (app *App) applyOptions(options ...AppOption) *App {
+func (app *Application) applyOptions(options ...AppOption) *Application {
 	for _, option := range options {
 		option.Apply(app)
 	}
 	return app
 }
 
-func (app *App) run() (err error) {
+func (app *Application) run() (err error) {
 	waitChan := make(chan error, 1)
 
 	// 启动前的初始化任务
@@ -149,6 +149,8 @@ func (app *App) run() (err error) {
 		go j.item.(Job)()
 	}
 
+	log.Noticef("application[%v] run ok.", app.Name)
+
 	select {
 	case anyErr := <-waitChan:
 		log.Critif("scheduler stop with execute error:%v", anyErr)
@@ -156,18 +158,18 @@ func (app *App) run() (err error) {
 	}
 }
 
-func (app *App) stop() {
+func (app *Application) stop() {
 	app.stopServices()
 	app.stopServers()
 }
 
-func (app *App) stopServers() {
+func (app *Application) stopServers() {
 	for _, s := range app.servers {
 		s.item.(*engine.Engine).Stop()
 	}
 }
 
-func (app *App) stopServices() {
+func (app *Application) stopServices() {
 	for _, s := range app.services {
 		s.item.(*joyservice.ServicesManager).Stop()
 	}
