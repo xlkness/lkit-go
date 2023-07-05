@@ -36,8 +36,8 @@ func WithSchedulerBootConfigFileContent(content interface{}) SchedulerOption {
 	return application.WithSchedulerBootConfigFileContent(content)
 }
 
-// WithAppBootConfigFileParser 设置起服文件解析函数，默认yaml格式
-func WithAppBootConfigFileParser(f func(content []byte, out interface{}) error) SchedulerOption {
+// WithSchedulerBootConfigFileParser 设置起服文件解析函数，默认yaml格式
+func WithSchedulerBootConfigFileParser(f func(content []byte, out interface{}) error) SchedulerOption {
 	return application.WithSchedulerBootConfigFileParser(f)
 }
 
