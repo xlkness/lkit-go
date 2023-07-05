@@ -196,6 +196,8 @@ func (scd *Scheduler) initialize() error {
 		if holmesPath[len(holmesPath)-1] != '/' {
 			holmesPath += "/"
 		}
+	} else {
+		holmesPath = "log/"
 	}
 	holmes.StartTraceAndDump(holmesPath + "holmes/" + scd.globalBootFlag.ServiceName)
 
